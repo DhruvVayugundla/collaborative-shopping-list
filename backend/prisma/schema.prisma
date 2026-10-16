@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  username     String       @unique
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  ownedLists   ShoppingList[]
+  memberships  ListMember[]
+  createdItems Item[]
+}
+
+model ShoppingList {
+  id        String       @id @default(uuid())
+  name      String
+  ownerId   String
+  owner     User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members   ListMember[]
+  items     Item[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([ownerId])
+}
+
+/// role: "owner" | "member". The owner also has a row so access checks are a single lookup.
+model ListMember {
+  listId  String
+  userId  String
+  role    String
+  addedAt DateTime     @default(now())
+  list    ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([listId, userId])
+  @@index([userId])
+}
+
+model Item {
+  id                  String       @id @default(uuid())
+  listId              String
+  list                ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  name                String
+  quantity            Int          @default(1)
+  /// Price per unit in minor currency units (paise/cents) to avoid float rounding.
+  estimatedPriceCents Int          @default(0)
+  purchased           Boolean      @default(false)
+  createdById         String
+  createdBy           User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@index([listId])
+}

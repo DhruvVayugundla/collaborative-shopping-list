@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useOutletContext, useParams } from "react-router";
 import { ApiError } from "../api/client";
-import { useAddItem, useDeleteList, useList, useRenameList } from "../api/hooks";
+import { useAddItem, useDeleteList, useFeatures, useList, useRenameList } from "../api/hooks";
 import { computeTotals, sortItems } from "../api/cache";
 import { useListSocket } from "../realtime/useListSocket";
 import { ItemForm } from "../components/ItemForm";
 import { ItemRow } from "../components/ItemRow";
 import { MembersPanel } from "../components/MembersPanel";
+import { QuickAddPanel } from "../components/QuickAddPanel";
 import { ErrorMessage, InlineError, Spinner } from "../components/Feedback";
 import { formatMoney } from "../lib/format";
 import { btnDanger, btnGhost, btnPrimary, btnSecondary, card, input } from "../lib/ui";
@@ -29,6 +30,8 @@ export function ListDetailPage() {
 
 function ListView({ list, myUserId }: { list: ListDetail; myUserId: string }) {
   const addItem = useAddItem(list.id);
+  const aiQuickAdd = useFeatures().data?.aiQuickAdd ?? false;
+  const [quickAdd, setQuickAdd] = useState(false);
   const items = useMemo(() => sortItems(list.items), [list.items]);
   const totals = useMemo(() => computeTotals(list.items), [list.items]);
 
@@ -40,13 +43,28 @@ function ListView({ list, myUserId }: { list: ListDetail; myUserId: string }) {
       <ListHeader list={list} />
 
       <section className={`${card} p-3`}>
-        <ItemForm
-          submitLabel="Add item"
-          pending={addItem.isPending}
-          error={addItem.error}
-          onSubmit={(v) => addItem.mutateAsync(v)}
-          resetOnSuccess
-        />
+        {quickAdd ? (
+          <QuickAddPanel listId={list.id} onDone={() => setQuickAdd(false)} />
+        ) : (
+          <>
+            <ItemForm
+              submitLabel="Add item"
+              pending={addItem.isPending}
+              error={addItem.error}
+              onSubmit={(v) => addItem.mutateAsync(v)}
+              resetOnSuccess
+            />
+            {aiQuickAdd && (
+              <button
+                type="button"
+                className={`${btnGhost} mt-1 text-emerald-700 hover:text-emerald-800`}
+                onClick={() => setQuickAdd(true)}
+              >
+                ✨ Paste a list
+              </button>
+            )}
+          </>
+        )}
       </section>
 
       <section className={card}>

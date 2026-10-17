@@ -45,3 +45,5 @@ SQLite is a file, so the host must have a **persistent disk** (Railway volume, F
 | `DATABASE_URL` | Prisma SQLite URL, relative to `backend/prisma/` |
 | `JWT_SECRET` | Secret used to sign session tokens (16+ chars) |
 | `NODE_ENV` | `development`, `test` or `production` (production sets the `Secure` cookie flag) |
+| `GROQ_API_KEY` | Optional. Enables **AI quick-add** (paste a free-text list, an LLM on Groq turns it into items). Without it the feature is hidden. Get a key at console.groq.com/keys; see Groq's pricing page for costs. Capped at 20 parses per user per 10 minutes. |
+| `GROQ_MODEL` | Optional. Groq model for quick-add (default `openai/gpt-oss-120b`; must support strict structured outputs, e.g. `openai/gpt-oss-20b`). |

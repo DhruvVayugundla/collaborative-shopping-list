@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 import { api } from "./client";
 import { removeItem, removeMember, upsertItem, upsertMember } from "./cache";
 import type { Item, ListDetail, ListSummary, Member, User } from "../types";
@@ -41,11 +42,16 @@ export function useLogin(mode: "login" | "register") {
 
 export function useLogout() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   return useMutation({
     mutationFn: () => api("POST", "/auth/logout"),
+    // Settled, not success: even if the request fails, the local session is dropped.
     onSettled: () => {
-      qc.clear();
+      // Keep the "me" query (now null) so mounted observers see the logout; drop everything else.
       qc.setQueryData(keys.me, null);
+      qc.removeQueries({ predicate: (q) => q.queryKey[0] !== keys.me[0] });
+      // Clear the user first so the login page doesn't bounce back; plain /login, no "return to" page.
+      navigate("/login", { replace: true });
     },
   });
 }
@@ -161,5 +167,31 @@ export function useDeleteItem(listId: string) {
   return useMutation({
     mutationFn: (itemId: string) => api("DELETE", `/lists/${listId}/items/${itemId}`),
     onSuccess: (_data, itemId) => update((l) => removeItem(l, itemId)),
+  });
+}
+
+// ---- AI quick-add ----
+
+export function useFeatures() {
+  return useQuery({
+    queryKey: ["features"],
+    queryFn: () => api<{ aiQuickAdd: boolean }>("GET", "/features"),
+    staleTime: Infinity,
+  });
+}
+
+/** Turns free text into draft items. Nothing is saved until useAddItemsBulk. */
+export function useParseItems(listId: string) {
+  return useMutation({
+    mutationFn: async (text: string) =>
+      (await api<{ items: ItemInput[] }>("POST", `/lists/${listId}/items/parse`, { text })).items,
+  });
+}
+
+export function useAddItemsBulk(listId: string) {
+  const update = useUpdateListCache(listId);
+  return useMutation({
+    mutationFn: (items: ItemInput[]) => api<{ items: Item[] }>("POST", `/lists/${listId}/items/bulk`, { items }),
+    onSuccess: ({ items }) => update((l) => items.reduce(upsertItem, l)),
   });
 }

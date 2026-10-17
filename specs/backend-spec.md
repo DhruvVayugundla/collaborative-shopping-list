@@ -103,6 +103,16 @@ Non-members get 404 (not 403) so the existence of a list isn't revealed.
 - **Conflict resolution strategy:** Last-write-wins. Each update overwrites, and the broadcast carries the final state. The client ignores events older than its cached version.
 - **Scaling across instances:** Single instance for MVP. Add the Socket.IO Redis adapter if scaling out is ever needed.
 
+## 6a. AI Quick-Add
+- **What:** `POST /lists/:listId/items/parse` sends the user's free text to an LLM on Groq and returns draft items without saving them. The client shows the drafts for review, then saves them with `POST /lists/:listId/items/bulk` (one transaction, one `item:created` broadcast per item).
+- **Model & call:** `groq-sdk`, `client.chat.completions.create` with `GROQ_MODEL` (default `openai/gpt-oss-120b`), `reasoning_effort: "low"` (simple extraction, so speed matters), and strict structured outputs (`response_format: json_schema`, `strict: true`). The JSON is still re-parsed with Zod. Code: `src/ai/parseItems.ts`.
+- **Prompt rules:** Extract only what the user wrote (no suggestions). Counts become integer quantity ("a dozen eggs" → 12). Weights and volumes stay in the name ("Rice (2 kg)"). Price only when stated, in rupees per unit. The user's text is wrapped in `<list>` tags and treated as data.
+- **Output safety:** The model output is re-validated (`normalizeDrafts`): names trimmed/non-empty, quantity clamped to 1–9999, rupees converted to paise, at most 50 items. Bulk save re-validates everything with the normal item schema.
+- **Cost controls:** 2000-char input cap, 4000 max completion tokens, 20 parses per user per 10 min.
+- **Off switch:** Without `GROQ_API_KEY` the feature is off: `/features` reports `aiQuickAdd: false`, the UI hides it, and parse returns 503.
+- **Errors:** Groq rate-limit/server error → 503 `AI_UNAVAILABLE`; other API errors or output that fails validation → 502 `AI_ERROR`.
+- **Privacy:** The pasted text (only that, with no user or list data) goes to Groq; the UI says so.
+
 ## 7. Error Handling & Logging
 - **Error format:** `{ error: { code, message, details } }`, see [api-contract-spec.md](./api-contract-spec.md#2-standard-error-response). Zod errors → 400 with `details.issues`. Prisma unique violations → 409. Malformed JSON → 400.
 - **Logging:** Unexpected errors are logged with `console.error`, and the client gets a generic 500.
@@ -122,9 +132,12 @@ Non-members get 404 (not 403) so the existence of a list isn't revealed.
 | `DATABASE_URL` | SQLite file URL (relative to `prisma/`) | `file:./dev.db` |
 | `JWT_SECRET` | Token signing secret, ≥ 16 chars | long random string |
 | `NODE_ENV` | `development` \| `test` \| `production` | `production` |
+| `GROQ_API_KEY` | Optional; enables AI quick-add | `gsk_...` |
+| `GROQ_MODEL` | Groq model with strict structured outputs | `openai/gpt-oss-120b` |
 
 ## 10. Testing Strategy
 - **Unit / Integration:** `test/auth.test.ts`, `test/lists.test.ts` (Supertest against the Express app: auth flow, permission matrix, item CRUD, validation, totals)
+- **AI quick-add:** `test/ai.test.ts` (AI module mocked, Groq never called): normalizer, parse validation/membership/errors, bulk create + broadcast, features flag
 - **Realtime:** `test/realtime.test.ts` (real server + socket.io-client: handshake auth, room membership, broadcasts, no events after removal)
 - **Test DB:** A fresh `prisma/test.db` built from the migrations at the start of each run
 - **Load:** Not in MVP
@@ -149,6 +162,7 @@ backend/
     routes/          auth.ts, lists.ts, members.ts, items.ts, params.ts
     services/        access.ts (membership/role checks), serialize.ts (DTOs, totals)
     realtime/        socket.ts (auth, rooms, broadcast helpers)
+    ai/              parseItems.ts (Groq call, prompt, output normalization)
   test/
 ```
 

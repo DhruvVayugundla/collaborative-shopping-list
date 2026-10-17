@@ -9,6 +9,8 @@ export type ErrorCode =
   | "NOT_FOUND"
   | "CONFLICT"
   | "RATE_LIMITED"
+  | "AI_ERROR"
+  | "AI_UNAVAILABLE"
   | "INTERNAL";
 
 const statusByCode: Record<ErrorCode, number> = {
@@ -18,6 +20,8 @@ const statusByCode: Record<ErrorCode, number> = {
   NOT_FOUND: 404,
   CONFLICT: 409,
   RATE_LIMITED: 429,
+  AI_ERROR: 502,
+  AI_UNAVAILABLE: 503,
   INTERNAL: 500,
 };
 

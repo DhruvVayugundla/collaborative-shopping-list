@@ -11,6 +11,7 @@ import { authRouter } from "./routes/auth.js";
 import { listsRouter } from "./routes/lists.js";
 import { membersRouter } from "./routes/members.js";
 import { itemsRouter } from "./routes/items.js";
+import { aiEnabled } from "./ai/parseItems.js";
 
 export function createApp() {
   const app = express();
@@ -33,6 +34,9 @@ export function createApp() {
   const api = Router();
   api.get("/health", (_req, res) => {
     res.json({ ok: true });
+  });
+  api.get("/features", (_req, res) => {
+    res.json({ aiQuickAdd: aiEnabled() });
   });
   api.use("/auth", authLimiter, authRouter);
   api.use("/lists", requireAuth, listsRouter);

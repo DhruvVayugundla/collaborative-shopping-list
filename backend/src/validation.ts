@@ -35,6 +35,19 @@ export const createItemSchema = z.object({
   estimatedPriceCents: price.default(0),
 });
 
+export const MAX_BULK_ITEMS = 50;
+
+export const parseTextSchema = z.object({
+  text: z.string().trim().min(1, "Paste or type some items first").max(2000, "Keep it under 2000 characters"),
+});
+
+export const bulkItemsSchema = z.object({
+  items: z
+    .array(createItemSchema)
+    .min(1, "Add at least one item")
+    .max(MAX_BULK_ITEMS, `At most ${MAX_BULK_ITEMS} items at once`),
+});
+
 export const updateItemSchema = z
   .object({
     name: itemName,

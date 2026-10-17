@@ -29,6 +29,7 @@ Anyone who needs to coordinate shopping with other people, including families, r
 - Shared list changes are synchronized in real time for all authorized members.
 - Users can view their created and shared shopping lists.
 - The application displays the total estimated cost of items on each list.
+- AI quick-add (optional, needs a Groq API key): paste or type a free-text list and an LLM turns it into items with quantities and any stated prices. The user reviews the items before adding them. It only reads what the user wrote and never suggests items, so it does not conflict with the "AI-generated shopping recommendations" exclusion below.
 
 ## 5. Nice-to-Have Features (Post-MVP)
 

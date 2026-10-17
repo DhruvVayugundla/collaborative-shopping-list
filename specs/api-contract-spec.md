@@ -31,8 +31,10 @@
 | 403 | `FORBIDDEN` | Member attempting an owner-only action |
 | 404 | `NOT_FOUND` | Unknown route/list/item/user, or not a member of the list |
 | 409 | `CONFLICT` | Username taken, or user already a member |
-| 429 | `RATE_LIMITED` | Too many auth attempts |
+| 429 | `RATE_LIMITED` | Too many auth attempts or AI parses |
 | 500 | `INTERNAL` | Unexpected server error |
+| 502 | `AI_ERROR` | The AI couldn't parse the text (API error or invalid output) |
+| 503 | `AI_UNAVAILABLE` | AI quick-add not configured, or Groq is rate-limited/overloaded |
 
 ## 3. Shared Schemas
 ### User
@@ -107,10 +109,17 @@ Username: 3–30 of `[a-zA-Z0-9_]` (stored lowercase). Password: 8–72 chars.
 
 Item constraints: name 1–100 chars, quantity integer 1–9999, price integer 0–100,000,000.
 
-### Health
+### AI quick-add
+| Method | Path | Description | Auth |
+|--------|------|-------------|------|
+| POST | `/lists/:listId/items/parse` | Body `{text}` (1–2000 chars) → `{items: [{name, quantity, estimatedPriceCents}]}` (≤ 50 drafts). **Saves nothing.** Rate limit: 20 per user per 10 min. | Member |
+| POST | `/lists/:listId/items/bulk` | Body `{items: [{name, quantity?, estimatedPriceCents?}]}` (1–50, same constraints as single items) → `201 {items: [Item]}`. All or nothing; emits one `item:created` per item. | Member |
+
+### Health & features
 | Method | Path | Description | Auth |
 |--------|------|-------------|------|
 | GET | `/health` | → `{ok: true}` | No |
+| GET | `/features` | → `{aiQuickAdd: boolean}` (true when the server has a Groq API key) | No |
 
 ## 5. Real-Time Events
 - **Transport:** Socket.IO
@@ -141,6 +150,7 @@ Events are also delivered to the user who made the change. Clients apply them id
 | Scope | Limit |
 |-------|-------|
 | `/auth/*` per IP | 30 requests / 15 minutes (429 `RATE_LIMITED`) |
+| `/lists/:listId/items/parse` per user | 20 requests / 10 minutes |
 | Everything else | None in MVP |
 
 ## 7. Versioning & Changelog

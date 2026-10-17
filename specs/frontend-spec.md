@@ -35,6 +35,7 @@
 | `ListDetailPage` / `ListHeader` | Loads a list, subscribes to its room, owner rename/delete | `useList(id)`, `useListSocket(id)` |
 | `ItemForm` | Add or edit an item (name, qty, price each) | `initial`, `onSubmit`, `resetOnSuccess` |
 | `ItemRow` | Purchased checkbox, line total, inline edit, delete | `item` |
+| `QuickAddPanel` | AI quick-add: paste text → "Read list" → editable draft rows → "Add N items". Shown via "✨ Paste a list" only when `/features` says `aiQuickAdd` | `listId`, `onDone` |
 | `MembersPanel` | Member list; owner adds by username / removes; member leaves | `list`, `myUserId` |
 | `TotalBar` | Sticky bottom bar: estimated total and still-to-buy amount | totals |
 | `Feedback` | Spinner, error box, inline error | — |
@@ -70,6 +71,11 @@ Register or log in → the server sets an httpOnly `token` cookie → the `["me"
 ### Flow 2: Mark item as purchased
 1. Tick the checkbox on an item. It is struck through and moves below pending items immediately.
 2. Other members see the same change; "still to buy" decreases.
+
+### Flow 3: AI quick-add
+1. Tap "✨ Paste a list" under the add-item form, paste e.g. "2kg rice, a dozen eggs, surf excel ~250".
+2. Tap "Read list". The AI returns draft rows (Rice (2 kg) ×1, Eggs ×12, Surf Excel ×1 ₹250); nothing is saved yet.
+3. Edit or remove rows, then tap "Add 3 items". Everyone on the list sees them appear.
 
 ## 9. Validation Rules (client-side)
 | Field | Rule | Error message |

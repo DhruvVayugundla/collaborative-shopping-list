@@ -1,5 +1,7 @@
 # Goal Spec — Collaborative Shopping List
 
+> Live: https://collaborative-shopping-list.onrender.com (Render free tier + Turso)
+
 ## 1. Problem Statement
 
 People living together, such as family members, roommates, and groups of friends, often manage shopping lists through messaging apps, notes, or verbal communication. This can lead to duplicate purchases, forgotten items, and confusion about what has already been purchased. This application provides a shared shopping list where multiple users can add items, update their status, and track estimated expenses in one place.
@@ -68,6 +70,7 @@ Anyone who needs to coordinate shopping with other people, including families, r
 - Only authenticated and authorized users can access shared lists.
 - The backend and database are responsible for storing and validating changes.
 - Real-time updates are implemented with Socket.IO.
+- Hosting must be free: the app is deployed on Render's free tier with a Turso database, so it sleeps after 15 minutes idle and takes about a minute to wake.
 - AI quick-add depends on an external LLM provider (Groq) and is optional: the app works fully without it.
 
 ## 9. Glossary

@@ -1,5 +1,10 @@
 # Collaborative Shopping List
 
+> ### 🚀 Live: [collaborative-shopping-list.onrender.com](https://collaborative-shopping-list.onrender.com)
+> Register two accounts (for example in a normal and a private window), share a list, and watch changes appear in both.
+>
+> It runs on Render's free tier: if nobody has used it for 15 minutes, the first load takes about a minute while it wakes up.
+
 A shared shopping list for families, roommates and friends. Everyone on a list sees changes the moment they happen. Who added what, what's already bought, and the estimated cost of what's left are all in one place, so nobody buys the milk twice.
 
 ## Features
@@ -133,6 +138,8 @@ The design is documented in [`specs/`](specs/):
 The app runs as a single Node process that serves both the API and the built frontend (`npm run build`, then `npm start` with `NODE_ENV=production`). On startup, `npm start` applies any pending database migrations.
 
 ### Free hosting: Render + Turso
+
+The live app at **https://collaborative-shopping-list.onrender.com** is deployed this way.
 
 Render's free tier has no persistent disk, so in production the data lives in [Turso](https://turso.tech), a hosted SQLite-compatible database with a free plan. Local development and the tests keep using the plain SQLite file. The setup is described in [`render.yaml`](render.yaml).
 

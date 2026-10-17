@@ -2,6 +2,7 @@
 
 > Status: Implemented (MVP + AI quick-add) | Owner: <!-- name --> | Last updated: 2026-10-17
 > Related: [goal-spec.md](./goal-spec.md) · [api-contract-spec.md](./api-contract-spec.md)
+> Live: https://collaborative-shopping-list.onrender.com
 
 ## 1. Tech Stack
 - **Runtime / Language:** Node.js (20.19+) + TypeScript
@@ -151,7 +152,7 @@ Variables already set in the process or system environment take precedence over 
 - **Load:** Not in MVP
 
 ## 11. Deployment
-- **Environments:** Local dev (SQLite file). Production is one free Render web service (`render.yaml` Blueprint) backed by Turso.
+- **Environments:** Local dev (SQLite file). Production is one free Render web service (`render.yaml` Blueprint) backed by Turso, live at https://collaborative-shopping-list.onrender.com. It was verified after the first deploy: health check, a two-user real-time test (8/8 passed) and an AI quick-add parse.
 - **Build / start on Render:** Build is `npm ci --include=dev && npm run build` (dev dependencies are needed to build, and Render's `NODE_ENV=production` would otherwise skip them). Start is `npm start`. The health check is `/api/v1/health`. Express trusts one proxy hop in production so rate limits see the real client IP.
 - **CI/CD:** Render auto-deploys on every push to `main`. There's no test gate yet; suggested next step: a GitHub Action running `npm ci && npm test && npm run build`.
 - **Migrations:** Author them with `prisma migrate dev` locally. `npm start` runs `src/scripts/migrate.ts` before boot. With Turso, it applies each `prisma/migrations/*/migration.sql` not yet recorded in `_app_migrations`, one transaction per migration, because Prisma Migrate can't connect to Turso. Otherwise it runs `prisma migrate deploy`.

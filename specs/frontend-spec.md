@@ -2,6 +2,7 @@
 
 > Status: Implemented (MVP + AI quick-add) | Owner: <!-- name --> | Last updated: 2026-10-17
 > Related: [goal-spec.md](./goal-spec.md) · [api-contract-spec.md](./api-contract-spec.md)
+> Live: https://collaborative-shopping-list.onrender.com
 
 ## 1. Tech Stack
 - **Framework:** React 19 (single-page app, no SSR)

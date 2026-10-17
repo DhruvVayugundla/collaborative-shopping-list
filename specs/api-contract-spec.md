@@ -3,9 +3,10 @@
 > Status: Implemented (MVP + AI quick-add) | Owner: <!-- name --> | Last updated: 2026-10-17
 > Version: v1
 > Related: [frontend-spec.md](./frontend-spec.md) · [backend-spec.md](./backend-spec.md)
+> Live: https://collaborative-shopping-list.onrender.com
 
 ## 1. Conventions
-- **Base URL:** `/api/v1`
+- **Base URL:** `/api/v1`, served from the same origin as the app. In production: `https://collaborative-shopping-list.onrender.com/api/v1`.
 - **Format:** JSON
 - **Auth:** httpOnly, SameSite cookie `token` (JWT), set on login/register and cleared on logout. No `Authorization` header; clients send requests with credentials included.
 - **Naming:** camelCase

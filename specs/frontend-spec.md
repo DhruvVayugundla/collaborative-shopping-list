@@ -1,6 +1,6 @@
 # Frontend Spec — Collaborative Shopping List
 
-> Status: Implemented (MVP) | Owner: <!-- name --> | Last updated: 2026-10-16
+> Status: Implemented (MVP + AI quick-add) | Owner: <!-- name --> | Last updated: 2026-10-17
 > Related: [goal-spec.md](./goal-spec.md) · [api-contract-spec.md](./api-contract-spec.md)
 
 ## 1. Tech Stack
@@ -49,7 +49,7 @@
 
 ## 5. State Management
 - **Global state:** Current user = query `["me"]` (`null` when logged out). Any 401 sets it to `null`, which redirects to `/login`.
-- **Server state:** `["lists"]` (summaries), `["list", id]` (detail with items and members)
+- **Server state:** `["lists"]` (summaries), `["list", id]` (detail with items and members), `["features"]` (whether AI quick-add is enabled; fetched once)
 - **Local/UI state:** Form inputs, edit mode per row/header
 - **Optimistic updates:** Only the purchased toggle; rolled back to the previous snapshot on error. Other mutations update the cache from the server response.
 
@@ -60,7 +60,7 @@
 - **Reconnect / offline behavior:** Socket.IO reconnects automatically. On every (re)connect the page re-joins the list room and refetches the list, so missed events are recovered. A banner appears after 1.5s offline. Removal or deletion redirects to `/lists` with a notice.
 
 ## 7. Authentication Flow
-Register or log in → the server sets an httpOnly `token` cookie → the `["me"]` cache is populated → protected routes render and the socket connects. On load, `GET /auth/me` decides whether the user is logged in. Log out → `POST /auth/logout`, the cache is cleared, the socket disconnects. The token is never readable by JavaScript.
+Register or log in → the server sets an httpOnly `token` cookie → the `["me"]` cache is populated → protected routes render and the socket connects. On load, `GET /auth/me` decides whether the user is logged in. Log out → `POST /auth/logout`. Whether the request succeeds or fails, `["me"]` is set to `null` (the query is kept so mounted components see the change), every other query is removed, and the app navigates to `/login`. The socket then disconnects. The token is never readable by JavaScript.
 
 ## 8. Key User Flows
 ### Flow 1: Create and share a list
@@ -110,7 +110,7 @@ frontend/
     auth/        ProtectedRoute.tsx
     realtime/    socket.ts (shared connection), useListSocket.ts
     pages/       AuthPage, ListsPage, ListDetailPage
-    components/  Layout, ItemForm, ItemRow, MembersPanel, Feedback
+    components/  Layout, ItemForm, ItemRow, MembersPanel, QuickAddPanel, Feedback
     lib/         format.ts (currency), ui.ts (class strings)
     types.ts, App.tsx, main.tsx, index.css
 ```
@@ -118,3 +118,4 @@ frontend/
 ## 14. Open Questions
 - [ ] Add a confirmation/undo for item deletion?
 - [ ] Presence ("Bob is viewing") post-MVP?
+- [ ] Login/register still calls `qc.clear()` before setting `["me"]`, the pattern logout moved away from. Check that the login page always redirects after a successful login, and switch to the logout approach if it doesn't.

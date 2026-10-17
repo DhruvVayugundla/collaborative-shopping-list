@@ -1,6 +1,6 @@
 # API Contract Spec — Collaborative Shopping List
 
-> Status: Implemented (MVP) | Owner: <!-- name --> | Last updated: 2026-10-16
+> Status: Implemented (MVP + AI quick-add) | Owner: <!-- name --> | Last updated: 2026-10-17
 > Version: v1
 > Related: [frontend-spec.md](./frontend-spec.md) · [backend-spec.md](./backend-spec.md)
 
@@ -157,6 +157,7 @@ Events are also delivered to the user who made the change. Clients apply them id
 | Version | Date | Changes |
 |---------|------|---------|
 | v1 | 2026-10-16 | Initial contract |
+| v1 | 2026-10-17 | Added (non-breaking): `POST /lists/:listId/items/parse`, `POST /lists/:listId/items/bulk`, `GET /features`, error codes `AI_ERROR` / `AI_UNAVAILABLE` |
 
 ## 8. Open Questions
 - [ ] Pagination if lists grow large

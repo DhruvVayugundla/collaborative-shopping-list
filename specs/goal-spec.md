@@ -25,7 +25,7 @@ Anyone who needs to coordinate shopping with other people, including families, r
 - Users can add items with a name, quantity, and estimated price.
 - Users can edit and remove items from a shopping list.
 - Users can mark items as purchased or pending.
-- Users can share lists with other registered users through an invitation mechanism.
+- Users can share lists with other registered users: the list owner adds them by username, and they get access immediately.
 - Shared list changes are synchronized in real time for all authorized members.
 - Users can view their created and shared shopping lists.
 - The application displays the total estimated cost of items on each list.
@@ -67,7 +67,8 @@ Anyone who needs to coordinate shopping with other people, including families, r
 - The application requires an internet connection for real-time collaboration.
 - Only authenticated and authorized users can access shared lists.
 - The backend and database are responsible for storing and validating changes.
-- Real-time updates will be implemented using WebSockets or Socket.IO.
+- Real-time updates are implemented with Socket.IO.
+- AI quick-add depends on an external LLM provider (Groq) and is optional: the app works fully without it.
 
 ## 9. Glossary
 
@@ -82,4 +83,5 @@ Anyone who needs to coordinate shopping with other people, including families, r
 | Real-Time Synchronization | The process of reflecting changes made by one user to other connected users without requiring a manual refresh. |
 | Purchase Status | Indicates whether an item is pending or has been purchased. |
 | Estimated Cost | The expected cost of an item or the sum of estimated item costs in a shopping list. |
-| Invitation | A mechanism that allows a list owner to grant another user access to a shopping list. |
+| Invitation | A mechanism that allows a list owner to grant another user access to a shopping list. In this app, the owner adds the user by username and access is immediate (no accept step). |
+| AI Quick-Add | Turning a pasted or typed free-text list into draft items with an LLM. The user reviews the drafts before anything is saved. |

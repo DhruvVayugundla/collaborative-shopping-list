@@ -16,6 +16,8 @@ import { aiEnabled } from "./ai/parseItems.js";
 export function createApp() {
   const app = express();
   app.disable("x-powered-by");
+  // Behind the host's load balancer (Render): use the client IP from X-Forwarded-For for rate limits.
+  if (isProd) app.set("trust proxy", 1);
   app.use(helmet());
   app.use(express.json({ limit: "100kb" }));
   app.use(cookieParser());

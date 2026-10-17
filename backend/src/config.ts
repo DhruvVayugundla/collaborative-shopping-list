@@ -1,13 +1,19 @@
 import "dotenv/config";
 import { z } from "zod";
 
+// Hosting dashboards often set a left-blank secret to "": treat that as unset.
+const optionalSecret = z.preprocess((v) => (v === "" ? undefined : v), z.string().min(1).optional());
+
 const schema = z.object({
   PORT: z.coerce.number().int().positive().default(4000),
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(16, "JWT_SECRET must be at least 16 characters"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  // Optional: use a Turso (hosted libSQL) database instead of the local SQLite file.
+  TURSO_DATABASE_URL: optionalSecret,
+  TURSO_AUTH_TOKEN: optionalSecret,
   // Optional: enables AI quick-add. Without it the feature is hidden.
-  GROQ_API_KEY: z.string().min(1).optional(),
+  GROQ_API_KEY: optionalSecret,
   // Must support Groq strict structured outputs (e.g. openai/gpt-oss-120b, openai/gpt-oss-20b).
   GROQ_MODEL: z.string().min(1).default("openai/gpt-oss-120b"),
 });

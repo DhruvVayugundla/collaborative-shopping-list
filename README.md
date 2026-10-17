@@ -16,7 +16,7 @@ A shared shopping list for families, roommates and friends. Everyone on a list s
 | Layer | Technologies |
 |---|---|
 | Frontend | React 19, TypeScript, Vite 8, Tailwind CSS 4, React Router 7, TanStack Query, React Hook Form + Zod, socket.io-client |
-| Backend | Node.js, Express 5, Socket.IO, Prisma 6 + SQLite, Zod |
+| Backend | Node.js, Express 5, Socket.IO, Prisma 6 + SQLite (Turso in production), Zod |
 | Auth | Username + password (bcrypt), JWT in an httpOnly cookie, shared by REST and WebSocket |
 | AI | Groq (`openai/gpt-oss-120b`) with strict JSON-schema output |
 | Tests | Vitest, Supertest, socket.io-client |
@@ -39,7 +39,7 @@ Every change goes through the REST API; the WebSocket only carries updates out t
 
 ## Getting started
 
-**Requirements:** Node.js 20.19+ (or 22.12+) and npm.
+**Requirements:** Node.js 22.12+ and npm.
 
 ```bash
 git clone https://github.com/DhruvVayugundla/collaborative-shopping-list.git
@@ -81,6 +81,8 @@ All settings live in `backend/.env` (git-ignored; see [`backend/.env.example`](b
 | `DATABASE_URL` | Yes | SQLite file URL, relative to `backend/prisma/` (e.g. `file:./dev.db`) |
 | `JWT_SECRET` | Yes | Secret for signing session tokens, at least 16 characters |
 | `NODE_ENV` | No | `development` (default), `test` or `production` (production sets the `Secure` cookie flag) |
+| `TURSO_DATABASE_URL` | No | Use a hosted Turso database instead of the local SQLite file (production) |
+| `TURSO_AUTH_TOKEN` | With Turso | Auth token for the Turso database |
 | `GROQ_API_KEY` | No | Enables AI quick-add |
 | `GROQ_MODEL` | No | Groq model for quick-add (default `openai/gpt-oss-120b`; must support strict structured outputs, e.g. `openai/gpt-oss-20b`) |
 
@@ -128,9 +130,28 @@ The design is documented in [`specs/`](specs/):
 
 ## Deployment
 
-`npm run build`, then `npm start` with `NODE_ENV=production`, runs a single Node process that serves both the API and the built frontend.
+The app runs as a single Node process that serves both the API and the built frontend (`npm run build`, then `npm start` with `NODE_ENV=production`). On startup, `npm start` applies any pending database migrations.
 
-SQLite stores data in a file, so the host needs a **persistent disk** (for example a Railway volume, Fly.io volume or Render disk), with `DATABASE_URL` pointing at it (e.g. `file:/data/app.db`). To switch to PostgreSQL later, change `provider` in [`schema.prisma`](backend/prisma/schema.prisma) and regenerate the migrations.
+### Free hosting: Render + Turso
+
+Render's free tier has no persistent disk, so in production the data lives in [Turso](https://turso.tech), a hosted SQLite-compatible database with a free plan. Local development and the tests keep using the plain SQLite file. The setup is described in [`render.yaml`](render.yaml).
+
+1. **Turso:** sign up, create a database, then copy its URL (`libsql://…`) and create an auth token.
+2. **Render:** sign up with GitHub, choose **New → Blueprint**, and select this repository. Render reads `render.yaml` and asks for:
+   - `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` from step 1
+   - `GROQ_API_KEY` (optional; leave it blank to hide AI quick-add)
+
+   `JWT_SECRET` is generated for you.
+3. Render builds and deploys the app to `https://<service-name>.onrender.com`. Every push to `main` redeploys it.
+
+**Free-tier limits to know about:**
+- The service sleeps after 15 minutes without visitors, and the first visit after that takes about a minute to wake it.
+- Render gives 750 free instance-hours a month.
+- Rate-limit counters reset whenever the service restarts.
+
+### Other hosts
+
+Without `TURSO_DATABASE_URL`, the app uses the SQLite file at `DATABASE_URL`, so any host with a **persistent disk** works (for example a Railway volume, Fly.io volume or Render paid disk), with `DATABASE_URL` pointing at it (e.g. `file:/data/app.db`). To switch to PostgreSQL later, change `provider` in [`schema.prisma`](backend/prisma/schema.prisma) and regenerate the migrations.
 
 ### Windows note
 

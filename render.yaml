@@ -1,0 +1,27 @@
+# Render Blueprint: New → Blueprint → select this repo.
+# Secrets marked `sync: false` are entered in the Render dashboard and never stored in git.
+services:
+  - type: web
+    name: collaborative-shopping-list
+    runtime: node
+    plan: free
+    # NODE_ENV=production would make `npm ci` skip devDependencies (TypeScript, Vite, Prisma) needed to build.
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Required by the Prisma schema; unused when TURSO_DATABASE_URL is set.
+      - key: DATABASE_URL
+        value: file:./unused.db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
+      # Optional: enables AI quick-add. Leave empty to hide the feature.
+      - key: GROQ_API_KEY
+        sync: false

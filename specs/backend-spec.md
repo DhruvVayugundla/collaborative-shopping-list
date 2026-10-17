@@ -6,8 +6,8 @@
 ## 1. Tech Stack
 - **Runtime / Language:** Node.js (20.19+) + TypeScript
 - **Framework:** Express 5 (async handler errors reach the error middleware automatically)
-- **Database:** SQLite (file-based). Deploy only to a host with a persistent disk (e.g. Railway volume, Fly.io volume, Render disk). Can move to PostgreSQL later by changing the Prisma `provider`.
-- **ORM / Query layer:** Prisma 6 (schema + `prisma migrate`)
+- **Database:** SQLite (file-based) locally and in tests. In production on Render's free tier, which has no persistent disk, the database is Turso (hosted libSQL, SQLite-compatible), selected when `TURSO_DATABASE_URL` is set. Can move to PostgreSQL later by changing the Prisma `provider`.
+- **ORM / Query layer:** Prisma 6, with the `@prisma/adapter-libsql` driver adapter when Turso is used (`src/db.ts`). Migrations are authored with `prisma migrate dev` against the local file.
 - **Real-time transport:** Socket.IO, attached to the same HTTP server as Express
 - **Cache / Pub-Sub:** None for MVP (single instance)
 - **Auth:** bcryptjs password hashing + JWT stored in an httpOnly, SameSite=Lax cookie; the same cookie authenticates the Socket.IO handshake
@@ -136,10 +136,12 @@ Non-members get 404 (not 403) so the existence of a list isn't revealed.
 | `DATABASE_URL` | SQLite file URL (relative to `prisma/`) | `file:./dev.db` |
 | `JWT_SECRET` | Token signing secret, ≥ 16 chars | long random string |
 | `NODE_ENV` | `development` \| `test` \| `production` | `production` |
+| `TURSO_DATABASE_URL` | Optional; use Turso instead of the SQLite file | `libsql://db-org.turso.io` |
+| `TURSO_AUTH_TOKEN` | Turso auth token (with the URL above) | `eyJ...` |
 | `GROQ_API_KEY` | Optional; enables AI quick-add | `gsk_...` |
 | `GROQ_MODEL` | Groq model with strict structured outputs | `openai/gpt-oss-120b` |
 
-Variables already set in the process or system environment take precedence over `backend/.env` (dotenv doesn't override them). A stale `GROQ_API_KEY` in the system environment will silently shadow the one in `.env`.
+Variables already set in the process or system environment take precedence over `backend/.env` (dotenv doesn't override them). A stale `GROQ_API_KEY` in the system environment will silently shadow the one in `.env`. Optional secrets set to an empty string (as hosting dashboards do for blank fields) are treated as unset.
 
 ## 10. Testing Strategy
 - **Unit / Integration:** `test/auth.test.ts`, `test/lists.test.ts` (Supertest against the Express app: auth flow, permission matrix, item CRUD, validation, totals)
@@ -149,9 +151,11 @@ Variables already set in the process or system environment take precedence over 
 - **Load:** Not in MVP
 
 ## 11. Deployment
-- **Environments:** local dev; one production instance on a host with a persistent volume
-- **CI/CD:** Not set up yet. Suggested: `npm ci && npm test && npm run build` on push.
-- **Migrations:** `prisma migrate dev` locally; `npm start` runs `prisma migrate deploy` before boot.
+- **Environments:** Local dev (SQLite file). Production is one free Render web service (`render.yaml` Blueprint) backed by Turso.
+- **Build / start on Render:** Build is `npm ci --include=dev && npm run build` (dev dependencies are needed to build, and Render's `NODE_ENV=production` would otherwise skip them). Start is `npm start`. The health check is `/api/v1/health`. Express trusts one proxy hop in production so rate limits see the real client IP.
+- **CI/CD:** Render auto-deploys on every push to `main`. There's no test gate yet; suggested next step: a GitHub Action running `npm ci && npm test && npm run build`.
+- **Migrations:** Author them with `prisma migrate dev` locally. `npm start` runs `src/scripts/migrate.ts` before boot. With Turso, it applies each `prisma/migrations/*/migration.sql` not yet recorded in `_app_migrations`, one transaction per migration, because Prisma Migrate can't connect to Turso. Otherwise it runs `prisma migrate deploy`.
+- **Free-tier limits:** The service sleeps after 15 min with no HTTP or WebSocket traffic, and waking takes about 1 min. There are 750 instance-hours a month. In-memory rate-limit counters reset on restart.
 
 ## 12. Folder Structure
 ```
@@ -169,6 +173,7 @@ backend/
     services/        access.ts (membership/role checks), serialize.ts (DTOs, totals)
     realtime/        socket.ts (auth, rooms, broadcast helpers)
     ai/              parseItems.ts (Groq call, prompt, output normalization)
+    scripts/         migrate.ts (runs migrations at startup; Turso or prisma migrate deploy)
   test/
 ```
 
